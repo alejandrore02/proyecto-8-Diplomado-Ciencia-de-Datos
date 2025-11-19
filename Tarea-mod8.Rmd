@@ -1,10 +1,10 @@
 ---
 title: "Análisis del consumo de alimentos y nutrición"
 subtitle: "Equipo 8"
-author: 
- - "Corral Robles Leonardo"
- - "Mondragon Velazquez Lorenzo Jesus"
- - "Ruiz Escamilla Alejandro"
+Author: 
+  - Corral Robles
+  - Mondragon Velazquez
+  - Ruiz Escamilla
 date: "2025-11-22"
 runtime: shiny
 output:
@@ -359,7 +359,15 @@ Este dashboard explora el **consumo de alimentos** y su relación con la **nutri
 4. **Grupos de alimentos** – aportes relativos de cereales, carnes, grasas, azúcares, etc.  
 5. **Modelo con PIB** – exploración de la relación entre **nivel económico** y **oferta nutricional**.
 
-Row
+Row {data-height=100}
+---
+
+### Autores:
+  - Corral Robles Leonardo
+  - Mondragon Velazquez Lorenzo Jesus
+  - Ruiz Escamilla Alejandro
+
+Roww
 --------------------------------
 
 ### Datos y variables clave
@@ -1245,15 +1253,17 @@ ordering   = FALSE
 ),
 caption = htmltools::tags$caption(
 style = "caption-side: top; text-align: left;",
-htmltools::em(paste0(
-"Los coeficientes indican cómo cambia la ", nombre_dep, " (en ", unidad_dep, ") ",
-"cuando las variables del modelo cambian:<br>",
-"• El coeficiente de gdp_per_capita indica el cambio esperado en la variable dependiente ",
-"cuando el PIB per cápita aumenta en 1 US$, manteniendo constantes las demás variables.<br>",
-"• Los términos de region_un (cuando aparecen) representan diferencias promedio entre regiones ONU, ",
-"respecto a una región base.<br>",
-"• Los términos year_factor (cuando aparecen) capturan cambios promedio entre años, ",
-"respecto a un año base."
+htmltools::HTML(paste0(
+  "<em>",
+  "Los coeficientes indican cómo cambia la ", nombre_dep, " (en ", unidad_dep, ") ",
+  "cuando las variables del modelo cambian:<br>",
+  "• El coeficiente de gdp_per_capita indica el cambio esperado en la variable dependiente<br>",
+  "cuando el PIB per cápita aumenta en 1 US$, manteniendo constantes las demás variables.<br>",
+  "• Los términos de region_un (cuando aparecen) representan diferencias promedio entre regiones ONU,<br>",
+  "respecto a una región base.<br>",
+  "• Los términos year_factor (cuando aparecen) capturan cambios promedio entre años,<br>",
+  "respecto a un año base.",
+  "</em>"
 ))
 )
 )
