@@ -28,3 +28,4 @@ La base puede consultarse y descargarse desde:
 **https://www.fao.org/faostat/en/#data/FBS**
 
 Para asegurar la comparabilidad entre países y años, utilizamos la versión **normalizada (Normalized)** del conjunto de datos.
+**Nota:** El archivo "DATA" de extensión data fix contiene el pre procesamiento de la Data, debido a que el DataSet es demasiado grande para adjuntarse, por ende en esta carpeta se encuentra el archivo "data filtrada" que contiene la Data lista y comprimida para su uso
