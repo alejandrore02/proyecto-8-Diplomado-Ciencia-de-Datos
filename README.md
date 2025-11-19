@@ -3,7 +3,7 @@
 ## Autores
 
 + Corral Robles Leonardo
-+ Mondragón Velázquez Lorenzo Jesús
++ Mondragon Velazquez Lorenzo Jesus
 + Ruiz Escamilla Alejandro.
 
 ## Overview
