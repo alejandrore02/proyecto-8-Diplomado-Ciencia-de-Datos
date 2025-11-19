@@ -9,7 +9,6 @@
 .RData
 .Ruserdata
 .Rapp.history
-data
 # Salidas generadas
 *.html
 *.nb.html

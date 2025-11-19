@@ -42,57 +42,10 @@ library(DT)
 ```
 
 
-```{r,include=FALSE,results='hide'}
-#Cargamos la base de datos
+```{r}
+## Se realizó un procesamiento de datos externo debido a que la base de datos es demasiado grande como para desplegarla en una shinny app gratuita. incluimos el archivo usado.
 
-data <- read_csv(
-  "data/FoodBalanceSheets_E_All_Data_(Normalized).csv",
-  locale = locale(encoding = "UTF-8"), 
-  show_col_types = FALSE
-)
-colnames(data)
-```
-
-
-```{r, results='hide'}
-#Resumen de la base de datos (solo para control interno)
-summary(data)
-```
-
-
-```{r, include=FALSE, results='hide'}
-#Filtramos los indicadores relacionados con “Food supply (kcal/capita/day)” y “Protein supply (g/capita/day)” 
-#y limpiamos / transformamos las columnas.
-
-#Tomamos los códigos del elemento 664 y 674 que hacen referencia a "Suministro alimentario de energía (kcal/persona/día)" 
-#y "Cantidad de suministro de proteínas (g/persona/dia)" de acuerdo a la descripción de la tabla en 
-#https://www.fao.org/faostat/es/#data/FBS 
-
-indicadores_nutricion <- c(664, 674)
-
-data_filtrada <- data %>%
-  janitor::clean_names() %>%
-  select(area_code, area, year, item, element_code, element, value, unit) %>% 
-  mutate(year = as.numeric(year)) %>%
-  filter(element_code %in% indicadores_nutricion) %>%
-  mutate(
-    indicador = case_when(
-      element_code == 664 ~ "food_supply_kcal_per_capita",
-      element_code == 674 ~ "protein_supply_g_per_capita",
-      TRUE ~ "other" 
-    )
-  ) %>%
-  pivot_wider(
-    names_from  = indicador,
-    values_from = value,
-    id_cols     = c(area_code, area, year, item),
-    values_fn   = mean
-  ) %>%
-  drop_na(food_supply_kcal_per_capita, protein_supply_g_per_capita)
-
-print("Estructura de data_filtrada:")
-print(head(data_filtrada))
-print(summary(data_filtrada))
+data_filtrada <- readRDS("data/data_filtrada.rds")
 ```
 
 
