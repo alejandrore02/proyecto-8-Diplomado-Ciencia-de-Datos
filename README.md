@@ -6,6 +6,13 @@
 + Mondragon Velazquez Lorenzo Jesus
 + Ruiz Escamilla Alejandro.
 
+## Deploy
+
+El dashboard interactivo se encuentra disponible en:
+
+**URL del proyecto:**  
+**<https://yy2czz-alejandrore02.shinyapps.io/consumo-alimentos-equipo-8/>**
+
 ## Overview
 
 Este proyecto desarrolla un dashboard interactivo en **R** (**flexdashboard** + **Shiny**) para analizar el suministro mundial de alimentos, tanto en términos de energía _(kcal / cápita / día)_ como de proteínas _(g / cápita / día)_, usando información oficial de:
@@ -21,12 +28,3 @@ La base puede consultarse y descargarse desde:
 **https://www.fao.org/faostat/en/#data/FBS**
 
 Para asegurar la comparabilidad entre países y años, utilizamos la versión **normalizada (Normalized)** del conjunto de datos.
-
-El dashboard lo carga automáticamente mediante:
-
-```r
-data <- read_csv(
-  "data/FoodBalanceSheets_E_All_Data_(Normalized).csv",
-  locale = locale(encoding = "UTF-8"),
-  show_col_types = FALSE
-)

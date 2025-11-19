@@ -14,3 +14,7 @@
 *.nb.html
 *.utf8.md
 *.knit.md
+*.RDataTmp
+Tarea-mod8_files
+rsconnect
+flexdash.Rproj
