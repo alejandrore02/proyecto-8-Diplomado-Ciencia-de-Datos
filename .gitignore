@@ -1,0 +1,17 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rproj
+# Cache y temporales
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+data
+# Salidas generadas
+*.html
+*.nb.html
+*.utf8.md
+*.knit.md
