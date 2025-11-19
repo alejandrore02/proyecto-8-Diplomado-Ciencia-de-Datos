@@ -22,11 +22,9 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
 
 
 
-Análisis Exploratorio
-=========
-Cargamos toda la librería necesaria para el EDA
-
 ```{r}
+#Cargamos toda la librería necesaria para el EDA
+
 library(flexdashboard)
 library(WDI) 
 library(tidyverse) 
@@ -39,11 +37,14 @@ library(ggplot2)
 library(kableExtra)
 library(htmltools)
 library(maps)
+library(DT)
+
 ```
 
-Cargamos la base de datos
 
-```{r}
+```{r,include=FALSE,results='hide'}
+#Cargamos la base de datos
+
 data <- read_csv(
   "data/FoodBalanceSheets_E_All_Data_(Normalized).csv",
   locale = locale(encoding = "UTF-8"), 
@@ -52,20 +53,21 @@ data <- read_csv(
 colnames(data)
 ```
 
-Resumen de la base de datos (solo para control interno)
 
 ```{r, results='hide'}
+#Resumen de la base de datos (solo para control interno)
 summary(data)
 ```
 
-Filtramos los indicadores relacionados con “Food supply (kcal/capita/day)” y “Protein supply (g/capita/day)” 
-y limpiamos / transformamos las columnas.
 
-Tomamos los códigos del elemento 664 y 674 que hacen referencia a "Suministro alimentario de energía (kcal/persona/día)" 
-y "Cantidad de suministro de proteínas (g/persona/dia)" de acuerdo a la descripción de la tabla en 
-https://www.fao.org/faostat/es/#data/FBS 
+```{r, include=FALSE, results='hide'}
+#Filtramos los indicadores relacionados con “Food supply (kcal/capita/day)” y “Protein supply (g/capita/day)” 
+#y limpiamos / transformamos las columnas.
 
-```{r}
+#Tomamos los códigos del elemento 664 y 674 que hacen referencia a "Suministro alimentario de energía (kcal/persona/día)" 
+#y "Cantidad de suministro de proteínas (g/persona/dia)" de acuerdo a la descripción de la tabla en 
+#https://www.fao.org/faostat/es/#data/FBS 
+
 indicadores_nutricion <- c(664, 674)
 
 data_filtrada <- data %>%
@@ -93,10 +95,11 @@ print(head(data_filtrada))
 print(summary(data_filtrada))
 ```
 
-De acuerdo a la documentación, `area` incluye países, regiones, continentes, grupos económicos, etc.
-Los `area_code` mayores o iguales a 5000 corresponden a agregados (no países), así que generamos subconjuntos.
 
-```{r}
+
+```{r, results='hide'}
+#De acuerdo a la documentación, `area` incluye países, regiones, continentes, grupos económicos, etc.
+#Los `area_code` mayores o iguales a 5000 corresponden a agregados (no países), así que generamos subconjuntos.
 codigos_area_no_paises <- 5000:5999
 
 data_filtrada <- data_filtrada %>%
@@ -176,9 +179,9 @@ Lista_paises <- sort(unique(data_final_pais$pais))
 Lista_grupos <- sort(unique(data_final_pais$grupos_comida))
 ```
 
-Preparación de datos para KPIs y visualizaciones globales
 
-```{r}
+```{r, results='hide'}
+#Preparación de datos para KPIs y visualizaciones globales
 # Tomamos el rango de años disponible (en tus datos va 2010–2023)
 
 anio_min <- min(data_final_pais$year, na.rm = TRUE)
@@ -267,7 +270,7 @@ pal_plotly <- RColorBrewer::brewer.pal(6, "Set2")
 
  
 
-```{r}
+```{r, include=FALSE}
 ##--- PREPARACIÓN ADICIONAL: PROTEÍNAS, MAPA ISO3 Y PIB
 world_by_group_year_prot <- data_periodo %>%
   group_by(year, grupos_comida) %>%
@@ -316,7 +319,7 @@ map_data_world_iso <- data_periodo %>%
 
 
 
-```{r}
+```{r, include=FALSE}
 indicador_pib <- "NY.GDP.PCAP.CD"
 
 gdp_data_raw <- WDI(
@@ -340,7 +343,7 @@ gdp_data <- gdp_data_raw %>%
 ```
 
 
-```{r}
+```{r, include=FALSE}
 ## Modelo
 model_data <- data_final_pais %>%
   filter(year >= anio_min, year <= anio_max) %>%
@@ -1022,10 +1025,11 @@ Esta visualización es útil para identificar **brechas nutricionales regionales
 Modelo del suministro alimentario
 =================================
 
+
 ## Controles del modelo {.sidebar}
 
 ```{r}
-# Años disponibles
+# Años disponibles para el modelo
 year_choices_modelo <- sort(unique(data_final_pais$year))
 
 sliderInput(
@@ -1042,8 +1046,8 @@ selectInput(
   inputId = "var_modelo",
   label   = "Variable a modelar:",
   choices = c(
-    "Calorías (kcal/cápita/día)"  = "kcal",
-    "Proteínas (g/cápita/día)"    = "prot"
+    "Calorías (kcal/cápita/día)" = "kcal",
+    "Proteínas (g/cápita/día)"   = "prot"
   ),
   selected = "kcal"
 )
@@ -1057,11 +1061,24 @@ selectInput(
   selected = "Todas"
 )
 
+# Selector de país para ver predicciones del modelo
+pais_choices_modelo <- sort(unique(model_data$pais))
+
+selectInput(
+  inputId = "pais_pred",
+  label   = "País para predicción (dentro del modelo):",
+  choices = c("Ninguno", pais_choices_modelo),
+  selected = "Ninguno"
+)
+
 HTML("<hr>")
 HTML("<p><b>Uso sugerido:</b><br>
-1) Elija la variable (calorías o proteínas) y el rango de años.<br>
-2) Opcionalmente filtre por una región ONU para ajustar el modelo solo con esos datos.<br>
-3) Interprete la pendiente y el R² para entender la dirección y fuerza de la tendencia en el tiempo.</p>")
+1) Elija si desea modelar calorías o proteínas.<br>
+2) Ajuste el rango de años del modelo (por ejemplo, 2000–2020).<br>
+3) Opcional: filtre por una región ONU para ver solo esos países.<br>
+4) Use los gráficos para interpretar la relación entre PIB y oferta alimentaria.<br>
+5) Seleccione un país para ver cómo el modelo reproduce y predice sus valores.</p>")
+
 ```
 
 
@@ -1075,10 +1092,14 @@ year >= input$rango_anios_modelo[1],
 year <= input$rango_anios_modelo[2]
 )
 
+# Filtro opcional por región ONU
+
 if (input$region_modelo != "Todas") {
 df <- df %>%
 dplyr::filter(region_un == input$region_modelo)
 }
+
+# Definir variable dependiente según selección
 
 df <- df %>%
 dplyr::mutate(
@@ -1091,6 +1112,10 @@ TRUE                       ~ NA_real_
 dplyr::filter(
 !is.na(var_dep),
 !is.na(gdp_per_capita)
+) %>%
+dplyr::mutate(
+region_un   = droplevels(region_un),
+year_factor = droplevels(year_factor)
 )
 
 df
@@ -1098,160 +1123,201 @@ df
 
 # Modelo de regresión múltiple reactivo
 
+# Fórmula se adapta según filtros (todas las regiones vs una región, años disponibles, etc.)
+
 modelo_mult <- reactive({
 df <- model_data_filtrada()
 
-# si no hay datos suficientes, no ajustamos
-
-if (nrow(df) < 20) {
+if (is.null(df) || nrow(df) < 20) {
 return(NULL)
 }
 
-lm(
-var_dep ~ gdp_per_capita + region_un + year_factor,
-data = df
-)
-})
+n_regiones <- length(unique(df$region_un))
+n_anios    <- length(unique(df$year_factor))
 
+# Base: siempre incluimos PIB per cápita
+
+if (input$region_modelo == "Todas") {
+# Modelo global: puede incluir región_un y/o año como factores si tienen más de un nivel
+formula <- var_dep ~ gdp_per_capita
+
+
+if (n_regiones > 1) {
+  formula <- update(formula, . ~ . + region_un)
+}
+if (n_anios > 1) {
+  formula <- update(formula, . ~ . + year_factor)
+}
+
+
+} else {
+# Modelo restringido a una sola región:
+# no tiene sentido añadir region_un (es constante), pero sí el año si hay más de un año
+if (n_anios > 1) {
+formula <- var_dep ~ gdp_per_capita + year_factor
+} else {
+formula <- var_dep ~ gdp_per_capita
+}
+}
+
+lm(formula, data = df)
+})
 ```
 
-Row {data-height=500}
+Row {data-height=350}
 -------
 
 ## PIB per cápita vs oferta total (país-año)
 ```{r}
 renderPlotly({
-df <- model_data_filtrada()
+  df <- model_data_filtrada()
 
-if (nrow(df) < 20) {
-return(NULL)
-}
+  if (is.null(df) || nrow(df) < 20) {
+    return(NULL)
+  }
 
-etiqueta_y <- if (input$var_modelo == "kcal") {
-"Oferta energética total (kcal, suma país-año)"
-} else {
-"Oferta proteica total (g, suma país-año)"
-}
+  etiqueta_y <- if (input$var_modelo == "kcal") {
+    "Oferta energética total (kcal, suma país-año)"
+  } else {
+    "Oferta proteica total (g, suma país-año)"
+  }
 
-titulo_graf <- if (input$var_modelo == "kcal") {
-"PIB per cápita vs oferta energética total"
-} else {
-"PIB per cápita vs oferta proteica total"
-}
+  titulo_graf <- if (input$var_modelo == "kcal") {
+    "PIB per cápita vs oferta energética total"
+  } else {
+    "PIB per cápita vs oferta proteica total"
+  }
 
-subtitulo_reg <- if (input$region_modelo != "Todas") {
-paste0("Región ONU: ", input$region_modelo)
-} else {
-"Todas las regiones ONU"
-}
+  subtitulo_reg <- if (input$region_modelo != "Todas") {
+    paste0("Región ONU seleccionada: ", input$region_modelo)
+  } else {
+    "Todas las regiones ONU"
+  }
 
-plot_ly(
-df,
-x      = ~gdp_per_capita,
-y      = ~var_dep,
-color  = ~region_un,
-colors = pal_plotly,
-type   = "scatter",
-mode   = "markers",
-text   = ~paste0(
-"<b>País:</b> ", pais,
-"<br><b>Año:</b> ", year,
-"<br><b>PIB per cápita (US$):</b> ", round(gdp_per_capita, 0),
-"<br><b>Valor total:</b> ", round(var_dep, 1)
-),
-hoverinfo = "text"
-) %>%
-layout(
-title  = list(
-text = paste0(
-titulo_graf, "<br><sup>", subtitulo_reg, "</sup>"
-)
-),
-xaxis  = list(
-title = "PIB per cápita (US$, Banco Mundial)",
-type  = "log"  # escala log para ver mejor países de bajos y altos ingresos
-),
-yaxis  = list(title = etiqueta_y),
-legend = list(orientation = "h", x = 0.02, y = -0.2),
-margin = list(l = 70, r = 20, t = 80, b = 70)
-)
+  # Definimos valores de ticks logarítmicos "limpios" en el eje X
+  tick_vals <- c(500, 1000, 2000, 5000, 10000, 20000, 50000, 100000)
+  tick_txt  <- c("500", "1k", "2k", "5k", "10k", "20k", "50k", "100k")
+
+  plot_ly(
+    df,
+    x      = ~gdp_per_capita,
+    y      = ~var_dep,
+    color  = ~region_un,
+    colors = pal_plotly,
+    type   = "scatter",
+    mode   = "markers",
+    text   = ~paste0(
+      "<b>País:</b> ", pais,
+      "<br><b>Año:</b> ", year,
+      "<br><b>PIB per cápita:</b> US$ ", formatC(round(gdp_per_capita, 0), big.mark = ","),
+      "<br><b>Valor total observado:</b> ", formatC(round(var_dep, 1), big.mark = ","),
+      if (input$var_modelo == "kcal") " kcal" else " g de proteína"
+    ),
+    hoverinfo = "text"
+  ) %>%
+    layout(
+      title  = list(
+        text = paste0(
+          titulo_graf, "<br><sup>", subtitulo_reg, "</sup>"
+        )
+      ),
+      xaxis  = list(
+        title      = "PIB per cápita (US$, escala log10)",
+        type       = "log",
+        tickvals   = tick_vals,
+        ticktext   = tick_txt
+      ),
+      yaxis  = list(
+        title      = etiqueta_y,
+        tickformat = ",.0f"
+      ),
+      legend = list(
+        orientation = "h",
+        x           = 0.02,
+        y           = -0.2
+      ),
+      margin = list(l = 80, r = 20, t = 70, b = 80),
+      height = 400  # fuerza una altura razonable para evitar huecos raros
+    )
 })
-
 
 ```
 
-Row {data-height=380}
+Row {data-height=420}
 ---
-
-### Resumen del modelo de regresión múltiple
+### Coeficientes del modelo por región ONU
 ```{r}
-renderUI({
+DT::renderDataTable({
 mod <- modelo_mult()
 
 if (is.null(mod)) {
-return(HTML("<p><i>No hay datos suficientes en el rango y filtros seleccionados para estimar el modelo.</i></p>"))
+return(data.frame(
+mensaje = "No hay datos suficientes para estimar el modelo con los filtros actuales (años, región, variable)."
+))
 }
 
 sm <- summary(mod)
 
-# coeficiente asociado al PIB per cápita
+coef_df <- as.data.frame(sm$coefficients) %>%
+tibble::rownames_to_column("Termino") %>%
+dplyr::rename(
+Estimacion     = Estimate,
+`Error estandar` = `Std. Error`,
+`Valor t`        = `t value`,
+`Valor p`        = `Pr(>|t|)`
+) %>%
+dplyr::mutate(
+Estimacion      = round(Estimacion, 2),
+`Error estandar` = round(`Error estandar`, 2),
+`Valor t`        = round(`Valor t`, 2),
+`Valor p`        = round(`Valor p`, 4)
+)
 
-beta_pib <- coef(mod)["gdp_per_capita"]
-r2       <- sm$r.squared
+# Etiqueta de la variable dependiente y unidades
 
-etiqueta_dep <- if (input$var_modelo == "kcal") {
-"oferta energética total (kcal, país-año)"
+if (input$var_modelo == "kcal") {
+nombre_dep <- "oferta energética total"
+unidad_dep <- "kcal totales por país-año"
 } else {
-"oferta proteica total (g, país-año)"
+nombre_dep <- "oferta proteica total"
+unidad_dep <- "gramos de proteína totales por país-año"
 }
 
-region_texto <- if (input$region_modelo != "Todas") {
-paste0("para los países de la región ONU <b>", input$region_modelo, "</b>.")
-} else {
-"para todos los países y regiones ONU incluidos en la base."
-}
-
-sentido_pib <- if (beta_pib > 0) "aumenta" else "disminuye"
-
-HTML(paste0(
-"<p>El modelo estimado es una <b>regresión lineal múltiple</b> donde la variable dependiente es la ",
-"<b>", etiqueta_dep, "</b> y las variables independientes son:</p>",
-"<ul>",
-"<li><b>PIB per cápita</b> (dólares corrientes, indicador NY.GDP.PCAP.CD del Banco Mundial).</li>",
-"<li><b>Región ONU</b> (variable categórica).</li>",
-"<li><b>Año</b> tratado como factor (<code>year_factor</code>), capturando efectos específicos de cada año.</li>",
-"</ul>",
-"<p>El modelo se estimó ", region_texto, "</p>",
-"<p><b>Coeficiente del PIB per cápita:</b><br>",
-"El coeficiente estimado es aproximadamente <b>",
-sprintf("%.6f", beta_pib),
-"</b>. Esto significa que, manteniendo constantes la región ONU y el año, ",
-"si el PIB per cápita aumenta en 1 US$, el valor esperado de la ",
-etiqueta_dep, " ", sentido_pib, " en alrededor de <b>",
-sprintf("%.6f", abs(beta_pib)), "</b> unidades.</p>",
-"<p><b>Coeficiente de determinación (R²):</b><br>",
-"El R² es aproximadamente <b>", sprintf("%.2f", r2),
-"</b>, lo que indica que cerca del <b>",
-sprintf("%.0f", 100 * r2),
-"%</b> de la variación observada en la ", etiqueta_dep,
-" puede ser explicada conjuntamente por el PIB per cápita, la región ONU y el año.</p>",
-"<p>Para ver todos los coeficientes (incluyendo diferencias entre regiones y años) ",
-"se puede consultar el resumen completo en la sección de resultados numéricos.</p>"
+DT::datatable(
+coef_df,
+options = list(
+pageLength = 10,
+dom        = "tip",
+ordering   = FALSE
+),
+caption = htmltools::tags$caption(
+style = "caption-side: top; text-align: left;",
+htmltools::em(paste0(
+"Los coeficientes indican cómo cambia la ", nombre_dep, " (en ", unidad_dep, ") ",
+"cuando las variables del modelo cambian:<br>",
+"• El coeficiente de gdp_per_capita indica el cambio esperado en la variable dependiente ",
+"cuando el PIB per cápita aumenta en 1 US$, manteniendo constantes las demás variables.<br>",
+"• Los términos de region_un (cuando aparecen) representan diferencias promedio entre regiones ONU, ",
+"respecto a una región base.<br>",
+"• Los términos year_factor (cuando aparecen) capturan cambios promedio entre años, ",
+"respecto a un año base."
 ))
+)
+)
 })
 
 ```
 
-Row {data-height=500}
+Row {data-height=460}
 ---
 
-### Valores observados vs predichos por el modelo
+### Predicción promedio por región (PIB y año típicos del subconjunto)
 ```{r}
 renderPlotly({
 mod <- modelo_mult()
 df  <- model_data_filtrada()
 
-if (is.null(mod) || nrow(df) < 20) {
+if (is.null(mod) || is.null(df) || nrow(df) < 20) {
 return(NULL)
 }
 
@@ -1274,8 +1340,10 @@ mode   = "markers",
 text   = ~paste0(
 "<b>País:</b> ", pais,
 "<br><b>Año:</b> ", year,
-"<br><b>Observado:</b> ", round(var_dep, 1),
-"<br><b>Predicho:</b> ", round(pred, 1)
+"<br><b>Valor observado:</b> ", formatC(round(var_dep, 1), big.mark = ","),
+if (input$var_modelo == "kcal") " kcal" else " g de proteína",
+"<br><b>Valor predicho:</b> ", formatC(round(pred, 1), big.mark = ","),
+if (input$var_modelo == "kcal") " kcal" else " g de proteína"
 ),
 hoverinfo = "text"
 ) %>%
@@ -1291,90 +1359,128 @@ title = paste0(
 "Valores observados vs predichos — ",
 if (input$var_modelo == "kcal") "modelo energético" else "modelo proteico"
 ),
-xaxis = list(title = paste0(etiqueta_dep, " observado")),
-yaxis = list(title = paste0(etiqueta_dep, " predicho")),
-margin = list(l = 80, r = 20, t = 70, b = 70)
+xaxis = list(
+title      = paste0(etiqueta_dep, " observado"),
+tickformat = ",.0f"
+),
+yaxis = list(
+title      = paste0(etiqueta_dep, " predicho"),
+tickformat = ",.0f"
+),
+legend = list(orientation = "h", x = 0.02, y = -0.2),
+margin = list(l = 90, r = 20, t = 70, b = 80)
 )
 })
 
+
 ```
-
-Row {data-height=320}
----
-### Resultados numéricos del modelo 
-```{r}
-renderPrint({
-mod <- modelo_mult()
-
-if (is.null(mod)) {
-cat("No hay datos suficientes en el rango y filtros seleccionados para estimar el modelo.\n")
-} else {
-summary(mod)
-}
-})
-```
-
-Row {data-height=380}
+Row {data-height=450}
 ---
 
-### ¿Cómo se construyó este modelo y qué preguntas responde?
-
+### Predicción del modelo para el país seleccionado
 ```{r}
-renderUI({
-etiqueta_dep_larga <- if (input$var_modelo == "kcal") {
-"la oferta energética total por país-año (suma de todas las fuentes de alimentos en kcal)"
-} else {
-"la oferta proteica total por país-año (suma de todas las fuentes de alimentos en gramos)"
-}
+DT::renderDataTable({
 
-region_texto_largo <- if (input$region_modelo != "Todas") {
-paste0(
-"Solamente se incluyen los países clasificados en la región ONU <b>",
-input$region_modelo, "</b>."
-)
-} else {
-"Se incluyen todos los países y regiones ONU disponibles en la base."
-}
+# Requiere que el usuario haya elegido un país
 
-HTML(paste0(
-"<p>Este modelo combina dos fuentes de información:</p>",
-"<ol>",
-"<li><b>FAOSTAT</b>, de donde se obtuvo ", etiqueta_dep_larga, ".</li>",
-"<li><b>Banco Mundial (WDI)</b>, de donde se tomó el indicador ",
-"<code>NY.GDP.PCAP.CD</code> para el PIB per cápita en dólares corrientes.</li>",
-"</ol>",
-"<p>Los pasos para construir el conjunto de datos del modelo fueron:</p>",
-"<ol>",
-"<li><b>Agregación por país-año:</b> se sumó la oferta de energía o proteínas de todos los grupos de alimentos ",
-"para cada combinación país-año, generando un total por país y año.</li>",
-"<li><b>Estandarización de nombres de países:</b> se usó la función <code>countrycode()</code> para asegurar ",
-"que los nombres de país de FAOSTAT coincidieran con los de WDI.</li>",
-"<li><b>Unión por país y año:</b> se integró para cada país-año el PIB per cápita y la oferta total de alimentos.</li>",
-"<li><b>Construcción del modelo:</b> se estimó una regresión lineal múltiple donde la variable dependiente es ",
-etiqueta_dep_larga, " y las variables explicativas son el PIB per cápita, la región ONU y el año (como factor).</li>",
-"</ol>",
-"<p>", region_texto_largo, "</p>",
-"<p>En términos sustantivos, este modelo permite explorar hasta qué punto las diferencias en el <b>nivel económico</b> ",
-"(medido por el PIB per cápita) y en la <b>región geográfica</b> se asocian con variaciones en el suministro total de alimentos, ",
-"controlando por los efectos globales del tiempo (año).</p>"
+if (is.null(input$pais_pred) || input$pais_pred == "Ninguno") {
+return(data.frame(
+mensaje = "Seleccione un país en el panel lateral para ver las predicciones del modelo."
 ))
+}
+
+mod <- modelo_mult()
+df  <- model_data_filtrada()
+
+if (is.null(mod) || is.null(df) || nrow(df) < 20) {
+return(data.frame(
+mensaje = "No hay datos suficientes para estimar el modelo con los filtros actuales."
+))
+}
+
+# Subconjunto del país elegido, dentro del rango de años y filtros actuales
+
+df_pais <- df %>%
+dplyr::filter(pais == input$pais_pred) %>%
+dplyr::arrange(year)
+
+if (nrow(df_pais) == 0) {
+return(data.frame(
+mensaje = "El país seleccionado no tiene observaciones en el rango de años y región elegidos."
+))
+}
+
+# Predicciones in-sample del modelo para ese país
+
+df_pais$pred <- as.numeric(predict(mod, newdata = df_pais))
+
+# Etiquetas según variable modelada
+
+if (input$var_modelo == "kcal") {
+nom_var   <- "Oferta energética total"
+unidad    <- "kcal totales por país-año"
+} else {
+nom_var   <- "Oferta proteica total"
+unidad    <- "gramos de proteína totales por país-año"
+}
+
+tabla <- df_pais %>%
+dplyr::transmute(
+`País`= pais,
+`Año`= year,
+`PIB per cápita (US$)`= formatC(round(gdp_per_capita, 0), big.mark = ","),
+`Valor observado (` = paste0(
+formatC(round(var_dep, 1), big.mark = ","),
+if (input$var_modelo == "kcal") " kcal" else " g"
+),
+`Valor predicho por el modelo` = paste0(
+formatC(round(pred, 1), big.mark = ","),
+if (input$var_modelo == "kcal") " kcal" else " g"
+)
+)
+
+colnames(tabla)[4] <- paste0("Valor observado (", unidad, ")")
+colnames(tabla)[5] <- paste0("Valor predicho (", unidad, ")")
+
+DT::datatable(
+tabla,
+options = list(
+pageLength = 10,
+dom        = "tip",
+ordering   = FALSE
+),
+caption = htmltools::tags$caption(
+style = "caption-side: top; text-align: left;",
+htmltools::em(paste0(
+nom_var, " (", unidad, ") para el país seleccionado. ",
+"Las predicciones corresponden al modelo ajustado con el rango de años y la región ONU ",
+"indicados en el panel lateral. Esta tabla permite comparar, año con año, ",
+"los valores observados y los valores que el modelo espera dado el PIB per cápita, ",
+"la región y el año."
+))
+)
+)
 })
 
 ```
-
 
 Conclusiones
 ============
+
 
 Row {data-height=320}
 --------------------------------
 
 ### 1. ¿Qué países presentan el mayor consumo calórico promedio?
 
-<div style="background: #f7f7f7; padding: 18px; border-radius: 8px; border: 1px solid #dddddd;">
-Escribe aquí tus conclusiones basadas en los mapas y tablas del dashboard.  
-Ejemplo de guía: identifica los países con mayores valores en *kcal/cap/día* y comenta posibles razones (ingreso, estructura productiva, dieta cultural).
-</div>
+Los países con **mayor consumo calórico promedio** (los colores más claros/amarillos, que representan valores cercanos a **140–150 kcal/capita/día**) son:
++ Estados Unidos  
++ Canadá   
++ Arabia Saudita   
++ Turquía  
++ Algeria   
++ Marruecos   
++ Países Europeos   
 
 ---
 
@@ -1383,10 +1489,14 @@ Row {data-height=320}
 
 ### 2. ¿Cómo ha evolucionado el suministro de calorías o proteínas desde 2000 a 2020?
 
-<div style="background: #f7f7f7; padding: 18px; border-radius: 8px; border: 1px solid #dddddd;">
-Aquí puedes describir la tendencia observada en las series de tiempo globales y por continente.  
-Incluye si hay tendencias crecientes, estables o decrecientes, y menciona eventos relevantes (crisis, pandemia, cambios estructurales).
-</div>
+En general la tendencia ha ido en aumento y podemos analizarla en 3 bloques de tiempo.
+
+La primera de 2010 al 2013, en donde el suministro de proteínas y calorías fue en aumento de forma leve pero continua, lo cual podría significar una estabilidad en la producción de alimentos global.
+
+En el 2014 tenemos una caída abrupta en ambos indicadores, lo cual podría representar la consecuencia de un evento climático o geopolítico.  
+En ese año comenzó una movilización militar a gran escala en Ucrania la cual tuvo como consecuencia directa el inicio de la guerra Rusia-Ucrania en 2022. Sin embargo podemos relacionar que este primer gran movimiento del 2014 tuvo un impacto directo en la producción de alimentos de Ucrania, pues se considera que al menos entre 10-15% de productos como maíz, cebada y trigo en el mundo se producen en Ucrania.
+
+Después de 2015 al 2020 tenemos una recuperación sostenida, tanto en calorías como en proteínas, lo cual termina por superar los niveles previos.
 
 ---
 
@@ -1395,10 +1505,16 @@ Row {data-height=320}
 
 ### 3. ¿Qué diferencias se observan entre regiones?
 
-<div style="background: #f7f7f7; padding: 18px; border-radius: 8px; border: 1px solid #dddddd;">
-Explica las desigualdades entre regiones ONU detectadas en el dashboard.  
-Compara continentes (África, Europa, Asia, etc.) y discute brechas visibles en el suministro energético y proteico.
-</div>
+Las diferencias regionales muestran un patrón muy evidente:  
+Europa, América del Norte y Oceanía presentan los niveles **más altos** de oferta calórica y proteica, lo cual se interpreta como la existencia de dietas más diversificadas y una amplia disponibilidad de alimentos de origen animal, aceites y productos procesados. Lo cual se puede relacionar directamente con los ingresos reportados de estos países.
+
+**América Latina** ocupa una posición intermedia, con valores más altos en el Cono Sur y más bajos en Centroamérica, resultados que también podemos relacionar directamente con los ingresos de estos países, pues son considerados países con ingresos bajos a medios.
+
+En **Asia** se muestra una marcada heterogeneidad: niveles medio-altos en Asia oriental, intermedios en Medio Oriente y considerablemente más bajos en Asia meridional, donde aún predomina el consumo de cereales. Valores que también se pueden explicar con los ingresos de dichos países.
+
+En contraste, **África** mantiene los niveles más bajos de calorías y proteínas, con una tendencia prácticamente plana entre 2010 y 2020, asociada a dietas menos diversificadas y una mayor vulnerabilidad alimentaria. Resultados que también se explican directamente con los ingresos de los países.
+
+En conjunto, estas diferencias reflejan desigualdades estructurales en acceso, producción y calidad de los alimentos entre regiones del mundo.
 
 ---
 
@@ -1407,10 +1523,15 @@ Row {data-height=320}
 
 ### 4. ¿Existe relación entre el tipo de alimento y el consumo calórico total?
 
-<div style="background: #f7f7f7; padding: 18px; border-radius: 8px; border: 1px solid #dddddd;">
-Aquí puedes comentar hallazgos de la sección de grupos de alimentos:  
-por ejemplo, si los cereales dominan el aporte calórico, si las grasas aportan más energía en ciertas regiones, etc.
-</div>
+Sí existe una relación directa entre el tipo de alimento predominante en la dieta y el consumo calórico total.
+
+Los datos obtenidos muestran que la mayor parte de las calorías provienen de alimentos con alta densidad energética tales como los **cereales**, los **azúcares** y los **aceites**, que en conjunto representan la base del suministro calórico mundial.
+
+En las regiones donde estos grupos son ampliamente consumidos —como Europa, América del Norte y Oceanía— se observan los niveles más altos de oferta calórica.
+
+Por el contrario, en zonas donde predominan alimentos menos energéticos, como tubérculos, legumbres, frutas y verduras, el consumo calórico es menor, como ocurre en África y partes de Asia meridional.
+
+Esta distribución hace que notemos que la estructura de la dieta influye directamente en el nivel calórico total: **cuanto mayor es la presencia de alimentos energéticamente densos, mayor es el consumo calórico promedio de una región.**
 
 ---
 
@@ -1419,14 +1540,15 @@ Row {data-height=320}
 
 ### 5. ¿Hay evidencia de cambios en los patrones alimentarios (por ejemplo, más productos procesados o menos consumo de cereales)?
 
-<div style="background: #f7f7f7; padding: 18px; border-radius: 8px; border: 1px solid #dddddd;">
-Describe aquí indicios de transición nutricional, como aumento de azúcares, aceites y alimentos procesados, o disminución en cereales básicos.  
-Puedes relacionarlo con tendencias económicas, urbanización o cambios socioculturales.
-</div>
+No, por lo menos a nivel global, las gráficas no muestran evidencia de cambios relevantes en los patrones alimentarios entre 2010 y 2023.
 
+Los distintos grupos de alimentos mantienen una proporción muy similar en el aporte energético a lo largo de todo el periodo, sin aumentos ni disminuciones significativas.  
+Esto indica que la composición general de la dieta global permanece estable.
 
+Por lo tanto, no se observan tendencias claras hacia un posible aumento o reducción de algún grupo de alimentos.  
+Es probable que dichos cambios sean visibles si tomamos en cuenta más años de muestra, por ejemplo desde los años 70 hasta la actualidad.
 
-### Comentarios 
+Aun así, es de destacar que **a nivel mundial la proporción de calorías aportadas por el grupo “Misceláneos” es poco más de la mitad**, un dato relevante considerando el contexto actual de **obesidad y diabetes** a nivel mundial.
 
 
 
